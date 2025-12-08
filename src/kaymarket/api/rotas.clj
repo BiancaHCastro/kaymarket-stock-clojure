@@ -5,7 +5,7 @@
             [ring.middleware.params :refer [wrap-params]]
             [kaymarket.api.servico :as servico]))
 
-;; Define todas as rotas
+;; define todas as rotas
 (defroutes app-routes 
   (GET "/acao/:codigo" [codigo data] (servico/consultar-acao-handler codigo data)) 
   (POST "/compra" request (servico/registrar-operacao (:body request) "compra"))
@@ -14,6 +14,7 @@
   (GET "/carteira" [] (servico/saldo-handler))
   (route/not-found "Rota nao encontrada"))
 
+;; middleware 
 (def app 
   (-> app-routes
       (wrap-json-body {:keywords? true})
