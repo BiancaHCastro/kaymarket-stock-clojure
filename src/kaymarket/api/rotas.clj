@@ -4,6 +4,8 @@
             [ring.middleware.json :refer [wrap-json-body ]]
             [ring.middleware.params :refer [wrap-params]]
             [kaymarket.api.servico :as servico]))
+
+;; Define todas as rotas
 (defroutes app-routes 
   (GET "/acao/:codigo" [codigo data] (servico/consultar-acao-handler codigo data)) 
   (POST "/compra" request (servico/registrar-operacao (:body request) "compra"))

@@ -7,27 +7,32 @@
             [kaymarket.dominio.extrato :as d-extrato]
             [kaymarket.bd.client :as client]))
 
+;; gera uma resposta JSON
 (defn- json-response [data & [status]]
   (-> (r/response (json/generate-string data))
       (r/content-type  "application/json")
       (r/status (or status 200))))
 
+;; consulta acao na API externa via client
 (defn consultar-acao-handler [codigo data]
   (let [dados (client/consultar-acao-externa codigo data)]
     (if (:erro dados)
       (json-response dados 404)
       (json-response dados))))
 
+;; processa a compra e salva no banco
 (defn- processar-compra [transacao]
   (db/registrar-transacao! transacao)
   (json-response {:status "sucesso" :mensagem "Compra registrada" :dados transacao}))
 
+;; processa a venda, vendo saldo disponivel por data
 (defn- processar-venda [transacao]
   (let [codigo    (:codigo transacao)
         qtd-venda (:quantidade transacao)
         data-venda (:data transacao)
         historico (db/ler-transacoes)]
-
+    
+    ;; ver se existe saldo suficiente para vender na data
     (if (d-venda/venda-valida? historico codigo qtd-venda data-venda)
       (do (db/registrar-transacao! transacao)
           (json-response {:status "sucesso" :mensagem "Venda registrada" :dados transacao}))
@@ -36,17 +41,20 @@
                       :mensagem (str "Saldo insuficiente em " data-venda " para vender " qtd-venda " de " codigo)}
                      400))))
 
+;; recebe as informacoes envia para compra ou venda
 (defn registrar-operacao [body tipo]
   (let [transacao (assoc body :tipo tipo)]
     (if (= tipo "compra")
       (processar-compra transacao)
       (processar-venda transacao))))
 
+;; extrato filtrado por período 
 (defn extrato-handler [inicio fim]
   (let [todas (db/ler-transacoes)
         filtradas (d-extrato/filtrar-por-periodo todas inicio fim)]
     (json-response filtradas)))
 
+;; retorna o saldo 
 (defn saldo-handler []
   (let [todas (db/ler-transacoes)
         saldo (d-extrato/gerar-relatorio-saldo todas)]

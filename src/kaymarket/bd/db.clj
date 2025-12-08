@@ -1,5 +1,6 @@
 (ns kaymarket.bd.db)
 
+;; atom que armazena todas as transacoes
 (def transacoes (atom '()))
 
 (defn registrar-transacao! [transacao]

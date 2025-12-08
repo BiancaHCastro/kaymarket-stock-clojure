@@ -9,6 +9,7 @@
 (def brapi-token "2sX4R369RTb5o8KYZK4EWr")
 (def base-url "https://brapi.dev/api/quote/")
 
+;; converte o mapa bruto da BRAPI - funcao pura
 (defn- formatar-resposta-brapi [dados-brutos] 
   (when dados-brutos
     {:codigo (:symbol dados-brutos)
@@ -22,6 +23,7 @@
      :fechamento (:regularMarketPreviousClose dados-brutos)
      :hora (:regularMarketTime dados-brutos)}))
 
+;; converte o timestamp - funcao pura
 (defn- converter-timestamp-para-data [timestamp]
   (try
     (let [formatter (DateTimeFormatter/ofPattern "yyyy-MM-dd")
@@ -29,24 +31,28 @@
           zone      (ZoneId/of "UTC")] 
       (.format (.withZone formatter zone) instant))
     (catch Exception _
-      ;; Se falhar a conversão, retorna o próprio valor como string
+      ;; se falhar a conversão, retorna o próprio valor como string
       (str timestamp))))
 
+;; procura o preco na data desejada - funcao pura 
 (defn- encontrar-preco-por-data [historico data-alvo]
   (if (empty? historico)
     nil
       (let [item (first historico)
         raw-date (:date item)]
+        ;; normaliza a data 
         (let [data-formatada (cond
                                (number? raw-date) (converter-timestamp-para-data raw-date)
                                (string? raw-date) (if (> (count raw-date) 10)
                                                     (subs raw-date 0 10)
                                                     raw-date)
-                               :else "")]
+                               :else "")] 
+          ;; se bate, retorna o preco
       (if (= data-formatada data-alvo)
         (:close item)
         (recur (rest historico) data-alvo))))))
 
+;; funcao para buscar 
 (defn- buscar-na-api [url query-params]
   (try
     (let [response (http/get url {:query-params (merge {"token" brapi-token} query-params)
@@ -59,6 +65,7 @@
   (catch Exception e
     nil)))
 
+;; consulta acao 
 (defn consultar-acao-externa [simbolo data-referencia]
   (if (or (nil? data-referencia) (str/blank? data-referencia))
     (let [dados (buscar-na-api (str base-url simbolo) {})]
@@ -72,6 +79,8 @@
         (let [historico (:historicalDataPrice dados)]
           (if (empty? historico)
             {:erro "Histórico não disponível para esta ação."}
+
+            ;; cotacao exata na data desejada
             (let [preco-historico (encontrar-preco-por-data historico data-referencia)]
               (if preco-historico
                 {:codigo (:symbol dados)
