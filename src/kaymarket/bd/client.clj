@@ -9,7 +9,7 @@
 (def brapi-token "2sX4R369RTb5o8KYZK4EWr")
 (def base-url "https://brapi.dev/api/quote/")
 
-;; converte o mapa bruto da BRAPI - funcao pura
+;; converte o mapa bruto da brapi - funcao pura
 (defn- formatar-resposta-brapi [dados-brutos] 
   (when dados-brutos
     {:codigo (:symbol dados-brutos)
@@ -31,7 +31,7 @@
           zone      (ZoneId/of "UTC")] 
       (.format (.withZone formatter zone) instant))
     (catch Exception _
-      ;; se falhar a conversão, retorna o próprio valor como string
+      ;; se falhar a conversao, retorna o proprio valor como string
       (str timestamp))))
 
 ;; procura o preco na data desejada - funcao pura 
@@ -40,7 +40,7 @@
     nil
       (let [item (first historico)
         raw-date (:date item)]
-        ;; normaliza a data 
+        ;; deixa a data bonitinha 
         (let [data-formatada (cond
                                (number? raw-date) (converter-timestamp-para-data raw-date)
                                (string? raw-date) (if (> (count raw-date) 10)

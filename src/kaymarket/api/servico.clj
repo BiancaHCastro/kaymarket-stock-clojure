@@ -31,12 +31,10 @@
         qtd-venda (:quantidade transacao)
         data-venda (:data transacao)
         historico (db/ler-transacoes)]
-    
     ;; ver se existe saldo suficiente para vender na data
     (if (d-venda/venda-valida? historico codigo qtd-venda data-venda)
       (do (db/registrar-transacao! transacao)
           (json-response {:status "sucesso" :mensagem "Venda registrada" :dados transacao}))
-
       (json-response {:status "erro"
                       :mensagem (str "Saldo insuficiente em " data-venda " para vender " qtd-venda " de " codigo)}
                      400))))
